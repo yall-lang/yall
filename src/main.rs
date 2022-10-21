@@ -16,11 +16,21 @@ struct Expression {
 	values: Vec<Phrase>,
 }
 
+impl Expression {
+	pub fn null(value: Phrase) -> Self {
+		Self {
+			kind: ExpressionKind::Null,
+			values: vec![value],
+		}
+	}
+}
+
 #[derive(Clone, Debug)]
 enum ExpressionKind {
 	Block,
 	List,
 	Item,
+	Null,
 }
 
 #[derive(Clone, Debug)]
@@ -29,6 +39,7 @@ enum Phrase {
 	Identifier(String),
 	Text(String),
 	Number(String),
+	Comment(String),
 }
 
 #[derive(Clone, Debug)]
@@ -78,6 +89,12 @@ fn parse_string(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<Phrase, 
 	Ok(Phrase::Text(text))
 }
 
+fn parse_comment(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
+	assert_eq!(s.next(), Some(';'));
+	let body = s.take_while(|&c| c != '\n').collect();
+	Ok(Phrase::Comment(body))
+}
+
 fn parse_number(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
 	let mut contains_point = false;
 
@@ -106,6 +123,7 @@ fn parse_phrase(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<Phrase, 
 	match s.peek().ok_or(ParseError::OhShit)? {
 		'(' | '[' | '{' => parse_expression(s).map(Phrase::Expression),
 		'"' => parse_string(s),
+		';' => parse_comment(s),
 		x if x.is_ascii_digit() => parse_number(s),
 		x if x.is_ascii_alphabetic() => parse_identifier(s),
 		_ => Err(ParseError::OhShit),
@@ -116,6 +134,10 @@ fn parse_expression(
 	s: &mut Peekable<impl Iterator<Item = char>>,
 ) -> Result<Expression, ParseError> {
 	parse_whitespace(s)?;
+
+	if s.peek() == Some(&';') {
+		return Ok(Expression::null(parse_comment(s)?));
+	}
 
 	let kind = match s.next().ok_or(ParseError::OhShit)? {
 		'[' => ExpressionKind::List,
@@ -134,6 +156,7 @@ fn parse_expression(
 		ExpressionKind::Block => assert_eq!(s.next(), Some('}')),
 		ExpressionKind::List => assert_eq!(s.next(), Some(']')),
 		ExpressionKind::Item => assert_eq!(s.next(), Some(')')),
+		ExpressionKind::Null => unreachable!(),
 	}
 
 	Ok(Expression { kind, values })
