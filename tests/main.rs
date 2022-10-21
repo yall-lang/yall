@@ -5,6 +5,21 @@ mod setup;
 const EXE: &str = "./build/release/yall";
 
 #[test]
+fn parse_bad() {
+	setup::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/bad.yall"])
+		.output()
+		.unwrap();
+
+	assert_eq!(
+		String::from_utf8_lossy(&result.stderr),
+		include_str!("./testdata/bad.yall.output")
+	);
+}
+
+#[test]
 fn parse_basic() {
 	setup::before();
 
@@ -14,8 +29,8 @@ fn parse_basic() {
 		.unwrap();
 
 	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/basic.yall.output")
+		String::from_utf8_lossy(&result.stdout),
+		include_str!("./testdata/basic.yall.output")
 	);
 }
 
@@ -29,8 +44,8 @@ fn parse_basic_w_comments() {
 		.unwrap();
 
 	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/basic_w_comments.yall.output")
+		String::from_utf8_lossy(&result.stdout),
+		include_str!("./testdata/basic_w_comments.yall.output")
 	);
 }
 
@@ -44,8 +59,8 @@ fn parse_comment() {
 		.unwrap();
 
 	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/comment.yall.output")
+		String::from_utf8_lossy(&result.stdout),
+		include_str!("./testdata/comment.yall.output")
 	);
 }
 
@@ -59,8 +74,8 @@ fn parse_empty() {
 		.unwrap();
 
 	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/empty.yall.output")
+		String::from_utf8_lossy(&result.stdout),
+		include_str!("./testdata/empty.yall.output")
 	);
 }
 
@@ -74,8 +89,8 @@ fn parse_single_block() {
 		.unwrap();
 
 	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/single_block.yall.output")
+		String::from_utf8_lossy(&result.stdout),
+		include_str!("./testdata/single_block.yall.output")
 	);
 }
 
@@ -89,7 +104,7 @@ fn parse_whitespace() {
 		.unwrap();
 
 	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/whitespace.yall.output")
+		String::from_utf8_lossy(&result.stdout),
+		include_str!("./testdata/whitespace.yall.output")
 	);
 }
