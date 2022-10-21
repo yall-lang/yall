@@ -13,7 +13,7 @@ Download and install Y'all
 
 ```sh
 git clone git@github.com:aslilac/yall.git
-cargo install --path .
+cargo install --path yall/
 ```
 
 Create a file called howdy.yall, and write a short program in it
