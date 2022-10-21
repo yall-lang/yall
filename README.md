@@ -12,7 +12,7 @@ Yet Another Lisp-y Language, because the world definitely needs another one :^)
 Download and install Y'all
 
 ```sh
-git clone git@github.com:aslilac/yall.git
+git clone git@github.com:yall-lang/yall.git
 cargo install --path yall/
 ```
 
