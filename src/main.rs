@@ -1,4 +1,4 @@
-#![feature(never_type)]
+use std::convert::Infallible;
 use std::env;
 use std::fs;
 use std::iter::Peekable;
@@ -36,13 +36,13 @@ enum ParseError {
 	OhShit,
 }
 
-impl From<!> for ParseError {
-	fn from(_: !) -> Self {
+impl From<Infallible> for ParseError {
+	fn from(_: Infallible) -> Self {
 		unreachable!()
 	}
 }
 
-fn parse_whitespace(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<(), !> {
+fn parse_whitespace(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<(), Infallible> {
 	while let Some(c) = s.peek() {
 		if !c.is_whitespace() {
 			break;
