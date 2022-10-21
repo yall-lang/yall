@@ -42,11 +42,20 @@ impl From<Infallible> for ParseError {
 	}
 }
 
-fn parse_whitespace(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<(), Infallible> {
+fn parse_whitespace_and_comment(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<(), Infallible> {
+	let mut is_in_comment = false;
+
 	while let Some(c) = s.peek() {
-		if !c.is_whitespace() {
+		if c == &';' {
+			is_in_comment = true;
+		} else if c == &'\n' && is_in_comment {
+			is_in_comment = false;
+		}
+
+		if !is_in_comment && !c.is_whitespace() {
 			break;
 		}
+
 		s.next();
 	}
 
@@ -101,7 +110,7 @@ fn parse_identifier(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<Phra
 }
 
 fn parse_phrase(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
-	parse_whitespace(s)?;
+	parse_whitespace_and_comment(s)?;
 
 	match s.peek().ok_or(ParseError::OhShit)? {
 		'(' | '[' | '{' => parse_expression(s).map(Phrase::Expression),
@@ -115,7 +124,7 @@ fn parse_phrase(s: &mut Peekable<impl Iterator<Item = char>>) -> Result<Phrase, 
 fn parse_expression(
 	s: &mut Peekable<impl Iterator<Item = char>>,
 ) -> Result<Expression, ParseError> {
-	parse_whitespace(s)?;
+	parse_whitespace_and_comment(s)?;
 
 	let kind = match s.next().ok_or(ParseError::OhShit)? {
 		'[' => ExpressionKind::List,
@@ -143,11 +152,11 @@ fn parse_program(
 	s: &mut Peekable<impl Iterator<Item = char>>,
 ) -> Result<Vec<Expression>, ParseError> {
 	let mut program = Vec::new();
-	parse_whitespace(s)?;
+	parse_whitespace_and_comment(s)?;
 
 	while s.peek().is_some() {
 		program.push(parse_expression(s)?);
-		parse_whitespace(s)?;
+		parse_whitespace_and_comment(s)?;
 	}
 
 	Ok(program)
