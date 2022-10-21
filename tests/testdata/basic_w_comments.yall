@@ -1,0 +1,9 @@
+{hey}
+
+(hello "there")
+
+(map ; here's a comment
+	(hello (friend "bread")) ; oh boy, lots of comments
+	(hello (friend "lilac"))) ; comments just absolutely everywhere
+
+[1 2 3]
