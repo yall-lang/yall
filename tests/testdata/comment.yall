@@ -1,0 +1,12 @@
+;;;; Top comment
+
+{hey}
+
+(hello "there")
+
+(map
+  ;; Comment above
+	(hello (friend "bread"))
+	(hello (friend "lilac"))) ; Trailing comment 
+
+[1 2 3]

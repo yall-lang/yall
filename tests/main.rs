@@ -48,3 +48,18 @@ fn parse_whitespace() {
 		include_bytes!("./testdata/whitespace.yall.output")
 	);
 }
+
+#[test]
+fn parse_comment() {
+	setup::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/comment.yall"])
+		.output()
+		.unwrap();
+
+	assert_eq!(
+		&result.stdout,
+		include_bytes!("./testdata/comment.yall.output")
+	);
+}
