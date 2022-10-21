@@ -1,0 +1,4 @@
+(func add::i32 (a::i32 b::i32)
+	(+ a b))
+
+(println "1 + 2 = " (add 1 2))
