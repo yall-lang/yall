@@ -6,3 +6,24 @@
 </h1>
 
 Yet Another Lisp-y Language, because the world definitely needs another one :^)
+
+## Getting started
+
+Download and install Y'all
+
+```sh
+git clone git@github.com:aslilac/yall.git
+cargo install --path .
+```
+
+Create a file called howdy.yall, and write a short program in it
+
+```lisp
+(println "howdy, y'all!")
+```
+
+Run your program!
+
+```sh
+yall ./howdy.yall
+```
