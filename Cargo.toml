@@ -1,0 +1,13 @@
+[package]
+name = "yall"
+version = "0.1.0"
+authors = ["McKayla Washburn <mckayla@hey.com>", "Brett Kolodny <hey@brett.ooo>"]
+description = "Yet Another Lisp-y Language"
+keywords = []
+license = "MIT"
+homepage = "https://github.com/aslilac/yall"
+repository = "https://github.com/aslilac/yall"
+documentation = "https://docs.rs/yall"
+edition = "2021"
+
+[dependencies]

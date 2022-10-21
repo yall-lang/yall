@@ -1,0 +1,9 @@
+{hey}
+
+(hello "there")
+
+(map
+	(hello (friend "bread"))
+	(hello (friend "lilac")))
+
+[1 2 3]
