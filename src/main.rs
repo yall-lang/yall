@@ -2,13 +2,12 @@ use std::convert::Infallible;
 use std::env;
 use std::fs;
 use std::iter::Peekable;
-use std::str::Chars;
 
 mod options;
 mod peek_while;
 
 use options::Options;
-// use peek_while::peek_while;
+use peek_while::peek_while;
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
@@ -54,175 +53,167 @@ impl From<Infallible> for ParseError {
 	}
 }
 
-#[derive(Clone, Debug)]
-struct Parser<'a> {
-	s: Peekable<Chars<'a>>,
-	_row: u32,
-	_col: u32,
+struct Parser<'a, I>
+where
+	I: Iterator<Item = char>,
+{
+	s: &'a mut Peekable<I>,
+	row: u32,
+	col: u32,
 }
 
-impl<'a> Parser<'a> {
-	fn parse_whitespace(&mut self) -> Result<(), Infallible> {
-		while let Some(c) = self.s.peek() {
-			if !c.is_whitespace() {
-				break;
-			}
-			self.s.next();
+impl<'a, I: Iterator<Item = char>> Iterator for Parser<'a, I> {
+	type Item = char;
+
+	fn next(&mut self) -> Option<Self::Item> {
+		self.col += 1;
+		self.s.next()
+	}
+}
+
+impl<'a, I: Iterator<Item = char>> Parser<'a, I> {
+	pub fn new(stream: &'a mut Peekable<I>) -> Self {
+		Self {
+			row: 0,
+			col: 0,
+			s: stream,
 		}
-		Ok(())
 	}
 
-	fn parse_string(&mut self) -> Result<Phrase, ParseError> {
-		// Consume quote
-		assert_eq!(self.s.next(), Some('"'));
+	pub fn peek(&self) -> Option<&char> {
+		self.s.peek()
+	}
+}
 
-		let mut is_next_escaped = false;
+fn parse_whitespace(s: &mut Parser<impl Iterator<Item = char>>) -> Result<(), Infallible> {
+	while let Some(c) = s.peek() {
+		if !c.is_whitespace() {
+			break;
+		}
+		s.next();
+	}
 
-		let mut string = String::new();
+	Ok(())
+}
 
-		while self.s.peek() != Some(&'"') {
-			string.push(self.s.next().expect("Should be a character"));
+fn parse_string(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
+	// Consume quote
+	assert_eq!(s.next(), Some('"'));
 
+	let mut is_next_escaped = false;
+
+	let text = s
+		.take_while(|&c| {
 			if is_next_escaped {
 				is_next_escaped = false;
-				continue;
+				return true;
 			}
 
-			if self.s.peek() == Some(&'\\') {
+			if c == '\\' {
 				is_next_escaped = true;
-				continue;
-			}
-		}
-
-		Ok(Phrase::Text(string))
-	}
-
-	fn parse_comment(&mut self) -> Result<Phrase, ParseError> {
-		assert_eq!(self.s.next(), Some(';'));
-
-		let mut body = String::new();
-
-		while self.s.peek() != Some(&'\n') {
-			if self.s.peek().is_none() {
-				break;
+				return true;
 			}
 
-			body.push(self.s.next().expect("Should be a comment"))
+			c != '"'
+		})
+		.collect();
+
+	Ok(Phrase::Text(text))
+}
+
+fn parse_comment(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
+	assert_eq!(s.next(), Some(';'));
+	let body = s.take_while(|&c| c != '\n').collect();
+	Ok(Phrase::Comment(body))
+}
+
+fn parse_number(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
+	let mut contains_point = false;
+
+	let number = peek_while(s, |&c: &char| {
+		if !contains_point && c == '.' {
+			contains_point = true;
+			return true;
 		}
 
-		Ok(Phrase::Comment(body))
+		c.is_ascii_digit()
+	})
+	.collect();
+
+	Ok(Phrase::Number(number))
+}
+
+fn parse_identifier(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
+	let identifier = peek_while(s, |&c| c.is_ascii_alphanumeric() || c == '_').collect();
+
+	Ok(Phrase::Identifier(identifier))
+}
+
+fn parse_phrase(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
+	parse_whitespace(s)?;
+
+	match s.peek().ok_or(ParseError::OhShit)? {
+		'(' | '[' | '{' => parse_expression(s).map(Phrase::Expression),
+		'"' => parse_string(s),
+		';' => parse_comment(s),
+		x if x.is_ascii_digit() => parse_number(s),
+		x if x.is_ascii_alphabetic() => parse_identifier(s),
+		_ => Err(ParseError::OhShit),
+	}
+}
+
+fn parse_expression(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Expression, ParseError> {
+	parse_whitespace(s)?;
+
+	if s.peek() == Some(&';') {
+		return Ok(Expression::null(parse_comment(s)?));
 	}
 
-	fn parse_number(&mut self) -> Result<Phrase, ParseError> {
-		let mut contains_point = false;
+	let kind = match s.next().ok_or(ParseError::OhShit)? {
+		'[' => ExpressionKind::List,
+		'{' => ExpressionKind::Block,
+		'(' => ExpressionKind::Item,
+		c => unreachable!("unexpected character {}", c),
+	};
 
-		let mut number = String::new();
+	let mut values = Vec::new();
 
-		while let Some(c) = self.s.peek() {
-			if !contains_point && *c == '.' {
-				contains_point = true;
-				number.push(*c);
-				continue;
-			}
-
-			if !c.is_ascii_digit() {
-				break;
-			}
-
-			number.push(*c);
-		}
-
-		Ok(Phrase::Number(number))
+	while let Ok(phrase) = parse_phrase(s) {
+		values.push(phrase);
 	}
 
-	fn parse_identifier(&mut self) -> Result<Phrase, ParseError> {
-		let mut identifier = String::new();
-
-		while let Some(c) = self.s.peek() {
-			if c.is_ascii_alphanumeric() || *c == '_' {
-				identifier.push(*c);
-			} else {
-				break;
-			}
-		}
-
-		Ok(Phrase::Identifier(identifier))
+	match kind {
+		ExpressionKind::Block => assert_eq!(s.next(), Some('}')),
+		ExpressionKind::List => assert_eq!(s.next(), Some(']')),
+		ExpressionKind::Item => assert_eq!(s.next(), Some(')')),
+		ExpressionKind::Null => unreachable!(),
 	}
 
-	fn parse_phrase(&mut self) -> Result<Phrase, ParseError> {
-		self.parse_whitespace()?;
-		self.s.next();
+	Ok(Expression { kind, values })
+}
 
-		match self.s.peek().ok_or(ParseError::OhShit)? {
-			'(' | '[' | '{' => self.parse_expression().map(Phrase::Expression),
-			'"' => self.parse_string(),
-			';' => self.parse_comment(),
-			x if x.is_ascii_digit() => self.parse_number(),
-			x if x.is_ascii_alphabetic() => self.parse_identifier(),
-			_ => Err(ParseError::OhShit),
-		}
+fn parse_program(
+	s: &mut Parser<impl Iterator<Item = char>>,
+) -> Result<Vec<Expression>, ParseError> {
+	let mut program = Vec::new();
+	parse_whitespace(s)?;
+
+	while s.peek().is_some() {
+		program.push(parse_expression(s)?);
+		parse_whitespace(s)?;
 	}
 
-	fn parse_expression(&mut self) -> Result<Expression, ParseError> {
-		self.parse_whitespace()?;
-
-		if self.s.peek() == Some(&';') {
-			return Ok(Expression::null(self.parse_comment()?));
-		}
-
-		let kind = match self.s.next().ok_or(ParseError::OhShit)? {
-			'[' => ExpressionKind::List,
-			'{' => ExpressionKind::Block,
-			'(' => ExpressionKind::Item,
-			c => unreachable!("unexpected character {}", c),
-		};
-
-		let mut values = Vec::new();
-
-		while let Ok(phrase) = self.parse_phrase() {
-			values.push(phrase);
-		}
-
-		match kind {
-			ExpressionKind::Block => assert_eq!(self.s.next(), Some('}')),
-			ExpressionKind::List => assert_eq!(self.s.next(), Some(']')),
-			ExpressionKind::Item => assert_eq!(self.s.next(), Some(')')),
-			ExpressionKind::Null => unreachable!(),
-		}
-
-		Ok(Expression { kind, values })
-	}
-
-	pub fn parse_program(&mut self) -> Result<Vec<Expression>, ParseError> {
-		let mut program = Vec::new();
-		self.parse_whitespace()?;
-
-		while self.s.peek().is_some() {
-			program.push(self.parse_expression()?);
-			self.parse_whitespace()?;
-		}
-
-		Ok(program)
-	}
-
-	pub fn new(stream: Peekable<Chars<'a>>) -> Self {
-		Self {
-			s: stream,
-			_row: 0,
-			_col: 0,
-		}
-	}
+	Ok(program)
 }
 
 fn main() -> Result<(), ParseError> {
 	let options = env::args().skip(1).collect::<Options>();
 
 	let source = fs::read_to_string(options.input).unwrap();
-	let stream = source.chars().peekable();
+	let mut stream = source.chars().peekable();
 
-	let mut parser = Parser::new(stream);
-
-	let program = parser.parse_program().unwrap();
+	let mut parser = Parser::new(&mut stream);
+	let program = parse_program(&mut parser).unwrap();
 
 	if options.debug_parser {
 		println!("{:?}", program);
