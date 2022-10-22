@@ -1,6 +1,5 @@
 use std::process::Command;
 
-#[macro_use]
 mod testing;
 use testing::EXE;
 
@@ -93,6 +92,18 @@ fn parse_single_block() {
 		.unwrap();
 
 	snapshot!("./tests/testdata/single_block.yall.out", result, stdout);
+}
+
+#[test]
+fn parse_types() {
+	testing::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/types.yall"])
+		.output()
+		.unwrap();
+
+	snapshot!("./tests/testdata/types.yall.out", result, stdout);
 }
 
 #[test]

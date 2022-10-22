@@ -213,10 +213,25 @@ fn parse_operator_identifier(
 	Ok(Phrase::Identifier(identifier))
 }
 
+fn parse_type(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<()> {
+	let prefix = s.take(2).collect::<String>();
+	if prefix != "::" {
+		return Err(miette!("entered parse_type with no type to parse"));
+	}
+
+	// This function unfortunately can't quite just use `parse_phrase`, because that
+	// would allow weird things like `a::b::c` since `parse_phrase` calls us. We need some
+	// mechanism to prevent annotating types with types. I guess that could be done as a
+	// separate validation step, but I feel like it shouldn't make it past the parser.
+	parse_text_identifier(s)?;
+
+	Ok(())
+}
+
 fn parse_phrase(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	parse_whitespace(s)?;
 
-	match s.peek().ok_or(miette!("unexpected end of file"))? {
+	let phrase = match s.peek().ok_or(miette!("unexpected end of file"))? {
 		'(' | '[' | '{' => parse_expression(s).map(Phrase::Expression),
 		'"' => parse_string(s),
 		';' => parse_comment(s),
@@ -224,7 +239,13 @@ fn parse_phrase(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<
 		x if x.is_ascii_alphabetic() => parse_text_identifier(s),
 		x if OPERATOR_CHARACTERS.contains(x) => parse_operator_identifier(s),
 		_ => Err(miette!("unexpected character")),
-	}
+	};
+
+	if s.peek() == Some(&':') {
+		parse_type(s)?;
+	};
+
+	phrase
 }
 
 fn parse_expression(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Expression> {
