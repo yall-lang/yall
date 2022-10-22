@@ -10,7 +10,7 @@ use options::Options;
 use peek_while::peek_while;
 
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct Expression {
 	kind: ExpressionKind,
 	values: Vec<Phrase>,
@@ -25,7 +25,7 @@ impl Expression {
 	}
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum ExpressionKind {
 	Block,
 	List,
@@ -56,7 +56,7 @@ impl ExpressionKind {
 	}
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum Phrase {
 	Expression(Expression),
 	Identifier(String),
@@ -109,9 +109,38 @@ mod parse_string_tests {
 	use super::*;
 
 	#[test]
-	fn fail() {
-		let invalid = "twat";
-		assert!(dbg!(parse_string(&mut invalid.chars().peekable())).is_err());
+	fn invalid() {
+		let invalid = "invalid";
+		assert!(parse_string(&mut invalid.chars().peekable()).is_err());
+	}
+
+	#[test]
+	fn valid() {
+		let hello = "\"hello!\"";
+		assert_eq!(
+			parse_string(&mut hello.chars().peekable()).unwrap(),
+			Phrase::Text("hello!".to_string())
+		);
+	}
+
+	#[test]
+	fn escape_quote() {
+		let hello = r#""hello \"buddy\"!""#;
+		assert_eq!(
+			parse_string(&mut hello.chars().peekable()).unwrap(),
+			Phrase::Text("hello \\\"buddy\\\"!".to_string())
+		);
+	}
+
+	#[test]
+	fn stops() {
+		let hello = "\"hello!\"🏁";
+		let mut s = hello.chars().peekable();
+		assert_eq!(
+			parse_string(&mut s).unwrap(),
+			Phrase::Text("hello!".to_string())
+		);
+		assert_eq!(s.next(), Some('🏁'));
 	}
 }
 
@@ -124,6 +153,31 @@ fn parse_comment(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result
 
 	let body = s.take_while(|&c| c != '\n').collect();
 	Ok(Phrase::Comment(body))
+}
+
+#[cfg(test)]
+mod parse_comment_tests {
+	use super::*;
+
+	#[test]
+	fn no_new_line() {
+		let hello = "; hello!";
+		assert_eq!(
+			parse_comment(&mut hello.chars().peekable()).unwrap(),
+			Phrase::Comment(" hello!".to_string())
+		);
+	}
+
+	#[test]
+	fn stops() {
+		let hello = "; hello!\n🏁";
+		let mut s = hello.chars().peekable();
+		assert_eq!(
+			parse_comment(&mut s).unwrap(),
+			Phrase::Comment(" hello!".to_string())
+		);
+		assert_eq!(s.next(), Some('🏁'));
+	}
 }
 
 fn parse_number(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
@@ -171,7 +225,7 @@ fn parse_expression(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Res
 	let kind =
 		ExpressionKind::from_initiator(s.next().ok_or(miette!("expected an expression here"))?)?;
 
-	let mut values = Vec::new();
+	let mut values = vec![];
 	while let Ok(phrase) = parse_phrase(s) {
 		values.push(phrase);
 	}
@@ -189,7 +243,7 @@ fn parse_expression(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Res
 }
 
 fn parse_program(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Vec<Expression>> {
-	let mut program = Vec::new();
+	let mut program = vec![];
 	parse_whitespace(s)?;
 
 	while s.peek().is_some() {

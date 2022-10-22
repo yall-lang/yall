@@ -69,6 +69,21 @@ fn parse_comment() {
 }
 
 #[test]
+fn parse_empty_expressions() {
+	setup::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/empty_expressions.yall"])
+		.output()
+		.unwrap();
+
+	assert_eq!(
+		String::from_utf8_lossy(&result.stdout),
+		include_str!("./testdata/empty_expressions.yall.output")
+	);
+}
+
+#[test]
 fn parse_empty() {
 	setup::before();
 
