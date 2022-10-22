@@ -4,12 +4,99 @@
         values: [],
     },
     Expression {
+        kind: Item,
+        values: [
+            Expression(
+                Expression {
+                    kind: Item,
+                    values: [],
+                },
+            ),
+        ],
+    },
+    Expression {
+        kind: Item,
+        values: [
+            Expression(
+                Expression {
+                    kind: Item,
+                    values: [
+                        Expression(
+                            Expression {
+                                kind: Item,
+                                values: [],
+                            },
+                        ),
+                    ],
+                },
+            ),
+        ],
+    },
+    Expression {
         kind: List,
         values: [],
     },
     Expression {
+        kind: List,
+        values: [
+            Expression(
+                Expression {
+                    kind: List,
+                    values: [],
+                },
+            ),
+        ],
+    },
+    Expression {
+        kind: List,
+        values: [
+            Expression(
+                Expression {
+                    kind: List,
+                    values: [
+                        Expression(
+                            Expression {
+                                kind: List,
+                                values: [],
+                            },
+                        ),
+                    ],
+                },
+            ),
+        ],
+    },
+    Expression {
         kind: Block,
         values: [],
+    },
+    Expression {
+        kind: Block,
+        values: [
+            Expression(
+                Expression {
+                    kind: Block,
+                    values: [],
+                },
+            ),
+        ],
+    },
+    Expression {
+        kind: Block,
+        values: [
+            Expression(
+                Expression {
+                    kind: Block,
+                    values: [
+                        Expression(
+                            Expression {
+                                kind: Block,
+                                values: [],
+                            },
+                        ),
+                    ],
+                },
+            ),
+        ],
     },
     Expression {
         kind: Item,

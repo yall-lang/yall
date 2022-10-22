@@ -196,8 +196,19 @@ fn parse_number(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<
 	Ok(Phrase::Number(number))
 }
 
-fn parse_identifier(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+fn parse_text_identifier(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	let identifier = peek_while(s, |&c| c.is_ascii_alphanumeric() || c == '_').collect();
+
+	Ok(Phrase::Identifier(identifier))
+}
+
+static OPERATOR_CHARACTERS: [char; 13] = [
+	'*', '+', '-', '/', '<', '>', '=', '!', '$', '|', '?', '^', '~',
+];
+fn parse_operator_identifier(
+	s: &mut Peekable<impl Iterator<Item = char>>,
+) -> miette::Result<Phrase> {
+	let identifier = peek_while(s, |c| OPERATOR_CHARACTERS.contains(c)).collect();
 
 	Ok(Phrase::Identifier(identifier))
 }
@@ -210,7 +221,8 @@ fn parse_phrase(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<
 		'"' => parse_string(s),
 		';' => parse_comment(s),
 		x if x.is_ascii_digit() => parse_number(s),
-		x if x.is_ascii_alphabetic() => parse_identifier(s),
+		x if x.is_ascii_alphabetic() => parse_text_identifier(s),
+		x if OPERATOR_CHARACTERS.contains(x) => parse_operator_identifier(s),
 		_ => Err(miette!("unexpected character")),
 	}
 }

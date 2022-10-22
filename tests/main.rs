@@ -1,11 +1,12 @@
 use std::process::Command;
 
-mod setup;
-use setup::EXE;
+#[macro_use]
+mod testing;
+use testing::EXE;
 
 #[test]
 fn parse_bad() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/bad.yall"])
@@ -13,116 +14,95 @@ fn parse_bad() {
 		.unwrap();
 
 	assert!(!result.status.success());
-
 	// We might want to test the exact output eventually, but it's probably gonna change a
 	// lot in the near future, which makes this test very fragile
-	// assert_eq!(
-	// 	String::from_utf8_lossy(&result.stderr),
-	// 	include_str!("./testdata/bad.yall.err")
-	// );
+	// snapshot!("./tests/testdata/bad.yall.err", result, stderr);
 }
 
 #[test]
 fn parse_basic() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/basic.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/basic.yall.out")
-	);
+	snapshot!("./tests/testdata/basic.yall.out", result, stdout);
 }
 
 #[test]
 fn parse_basic_w_comments() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/basic_w_comments.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/basic_w_comments.yall.out")
-	);
+	snapshot!("./tests/testdata/basic_w_comments.yall.out", result, stdout);
 }
 
 #[test]
 fn parse_comment() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/comment.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/comment.yall.out")
-	);
+	snapshot!("./tests/testdata/comment.yall.out", result, stdout);
 }
 
 #[test]
 fn parse_empty_expressions() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/empty_expressions.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/empty_expressions.yall.out")
+	snapshot!(
+		"./tests/testdata/empty_expressions.yall.out",
+		result,
+		stdout
 	);
 }
 
 #[test]
 fn parse_empty() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/empty.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/empty.yall.out")
-	);
+	snapshot!("./tests/testdata/empty.yall.out", result, stdout);
 }
 
 #[test]
 fn parse_single_block() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/single_block.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/single_block.yall.out")
-	);
+	snapshot!("./tests/testdata/single_block.yall.out", result, stdout);
 }
 
 #[test]
 fn parse_whitespace() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/whitespace.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/whitespace.yall.out")
-	);
+	snapshot!("./tests/testdata/whitespace.yall.out", result, stdout);
 }
