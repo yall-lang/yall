@@ -33,6 +33,29 @@ enum ExpressionKind {
 	Null,
 }
 
+impl ExpressionKind {
+	pub fn from_initiator(c: char) -> miette::Result<Self> {
+		match c {
+			'{' => Ok(Self::Block),
+			'[' => Ok(Self::List),
+			'(' => Ok(Self::Item),
+			c => Err(miette!(
+				"unexpected character {}, expected an expression",
+				c
+			)),
+		}
+	}
+
+	pub fn terminator(&self) -> char {
+		match self {
+			Self::Block => '}',
+			Self::List => ']',
+			Self::Item => ')',
+			Self::Null => unreachable!(),
+		}
+	}
+}
+
 #[derive(Clone, Debug)]
 enum Phrase {
 	Expression(Expression),
@@ -54,8 +77,11 @@ fn parse_whitespace(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Res
 }
 
 fn parse_string(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
-	// Consume quote
-	assert_eq!(s.next(), Some('"'));
+	// Consume "
+	let quote = s.next();
+	if quote != Some('"') {
+		return Err(miette!("entered parse_string with no string to parse"));
+	}
 
 	let mut is_next_escaped = false;
 
@@ -78,8 +104,24 @@ fn parse_string(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<
 	Ok(Phrase::Text(text))
 }
 
+#[cfg(test)]
+mod parse_string_tests {
+	use super::*;
+
+	#[test]
+	fn fail() {
+		let invalid = "twat";
+		assert!(dbg!(parse_string(&mut invalid.chars().peekable())).is_err());
+	}
+}
+
 fn parse_comment(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
-	assert_eq!(s.next(), Some(';'));
+	// Consume ;
+	let start = s.next();
+	if start != Some(';') {
+		return Err(miette!("entered parse_comment with no comment to parse"));
+	}
+
 	let body = s.take_while(|&c| c != '\n').collect();
 	Ok(Phrase::Comment(body))
 }
@@ -126,24 +168,21 @@ fn parse_expression(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Res
 		return Ok(Expression::null(parse_comment(s)?));
 	}
 
-	let kind = match s.next().ok_or(miette!("expected an expression here"))? {
-		'[' => ExpressionKind::List,
-		'{' => ExpressionKind::Block,
-		'(' => ExpressionKind::Item,
-		c => unreachable!("unexpected character {}", c),
-	};
+	let kind =
+		ExpressionKind::from_initiator(s.next().ok_or(miette!("expected an expression here"))?)?;
 
 	let mut values = Vec::new();
-
 	while let Ok(phrase) = parse_phrase(s) {
 		values.push(phrase);
 	}
 
-	match kind {
-		ExpressionKind::Block => assert_eq!(s.next(), Some('}')),
-		ExpressionKind::List => assert_eq!(s.next(), Some(']')),
-		ExpressionKind::Item => assert_eq!(s.next(), Some(')')),
-		ExpressionKind::Null => unreachable!(),
+	let terminator = s.next();
+	if terminator != Some(kind.terminator()) {
+		return Err(miette!(
+			"expected {} to terminate expression, got {:?}",
+			kind.terminator(),
+			terminator
+		));
 	}
 
 	Ok(Expression { kind, values })
@@ -164,10 +203,10 @@ fn parse_program(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result
 fn main() -> miette::Result<()> {
 	let options = env::args().skip(1).collect::<Options>();
 
-	let source = fs::read_to_string(options.input).unwrap();
+	let source = fs::read_to_string(options.input).or(Err(miette!("failed to read input file")))?;
 	let mut stream = source.chars().peekable();
 
-	let program = parse_program(&mut stream).unwrap();
+	let program = parse_program(&mut stream)?;
 	if options.debug_parser {
 		println!("{:?}", program);
 	}

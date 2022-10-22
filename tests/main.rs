@@ -13,10 +13,14 @@ fn parse_bad() {
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		String::from_utf8_lossy(&result.stderr),
-		include_str!("./testdata/bad.yall.output")
-	);
+	assert!(!result.status.success());
+
+	// We might want to test the exact output eventually, but it's probably gonna change a
+	// lot in the near future, which makes this test very fragile
+	// assert_eq!(
+	// 	String::from_utf8_lossy(&result.stderr),
+	// 	include_str!("./testdata/bad.yall.output")
+	// );
 }
 
 #[test]
