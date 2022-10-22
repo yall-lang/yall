@@ -1,0 +1,103 @@
+[
+    Expression {
+        kind: Block,
+        values: [
+            Identifier(
+                "hey",
+            ),
+        ],
+    },
+    Expression {
+        kind: Item,
+        values: [
+            Identifier(
+                "hello",
+            ),
+            Text(
+                "there",
+            ),
+        ],
+    },
+    Expression {
+        kind: Item,
+        values: [
+            Identifier(
+                "map",
+            ),
+            Comment(
+                " here's a comment",
+            ),
+            Expression(
+                Expression {
+                    kind: Item,
+                    values: [
+                        Identifier(
+                            "hello",
+                        ),
+                        Expression(
+                            Expression {
+                                kind: Item,
+                                values: [
+                                    Identifier(
+                                        "friend",
+                                    ),
+                                    Text(
+                                        "bread",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ],
+                },
+            ),
+            Comment(
+                " oh boy, lots of comments",
+            ),
+            Expression(
+                Expression {
+                    kind: Item,
+                    values: [
+                        Identifier(
+                            "hello",
+                        ),
+                        Expression(
+                            Expression {
+                                kind: Item,
+                                values: [
+                                    Identifier(
+                                        "friend",
+                                    ),
+                                    Text(
+                                        "lilac",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ],
+                },
+            ),
+        ],
+    },
+    Expression {
+        kind: Null,
+        values: [
+            Comment(
+                " comments just absolutely everywhere",
+            ),
+        ],
+    },
+    Expression {
+        kind: List,
+        values: [
+            Number(
+                "1",
+            ),
+            Number(
+                "2",
+            ),
+            Number(
+                "3",
+            ),
+        ],
+    },
+]

@@ -1,8 +1,7 @@
 use std::process::Command;
 
 mod setup;
-
-const EXE: &str = "./build/release/yall";
+use setup::EXE;
 
 #[test]
 fn parse_bad() {
@@ -19,7 +18,7 @@ fn parse_bad() {
 	// lot in the near future, which makes this test very fragile
 	// assert_eq!(
 	// 	String::from_utf8_lossy(&result.stderr),
-	// 	include_str!("./testdata/bad.yall.output")
+	// 	include_str!("./testdata/bad.yall.err")
 	// );
 }
 
@@ -34,7 +33,7 @@ fn parse_basic() {
 
 	assert_eq!(
 		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/basic.yall.output")
+		include_str!("./testdata/basic.yall.out")
 	);
 }
 
@@ -49,7 +48,7 @@ fn parse_basic_w_comments() {
 
 	assert_eq!(
 		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/basic_w_comments.yall.output")
+		include_str!("./testdata/basic_w_comments.yall.out")
 	);
 }
 
@@ -64,7 +63,7 @@ fn parse_comment() {
 
 	assert_eq!(
 		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/comment.yall.output")
+		include_str!("./testdata/comment.yall.out")
 	);
 }
 
@@ -79,7 +78,7 @@ fn parse_empty_expressions() {
 
 	assert_eq!(
 		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/empty_expressions.yall.output")
+		include_str!("./testdata/empty_expressions.yall.out")
 	);
 }
 
@@ -94,7 +93,7 @@ fn parse_empty() {
 
 	assert_eq!(
 		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/empty.yall.output")
+		include_str!("./testdata/empty.yall.out")
 	);
 }
 
@@ -109,7 +108,7 @@ fn parse_single_block() {
 
 	assert_eq!(
 		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/single_block.yall.output")
+		include_str!("./testdata/single_block.yall.out")
 	);
 }
 
@@ -124,6 +123,6 @@ fn parse_whitespace() {
 
 	assert_eq!(
 		String::from_utf8_lossy(&result.stdout),
-		include_str!("./testdata/whitespace.yall.output")
+		include_str!("./testdata/whitespace.yall.out")
 	);
 }

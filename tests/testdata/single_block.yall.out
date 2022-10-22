@@ -1,0 +1,10 @@
+[
+    Expression {
+        kind: Block,
+        values: [
+            Identifier(
+                "hey",
+            ),
+        ],
+    },
+]

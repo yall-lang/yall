@@ -262,7 +262,7 @@ fn main() -> miette::Result<()> {
 
 	let program = parse_program(&mut stream)?;
 	if options.debug_parser {
-		println!("{:?}", program);
+		println!("{:#?}", program);
 	}
 
 	Ok(())
