@@ -84,7 +84,7 @@ impl Location {
 
 impl Default for Location {
 	fn default() -> Self {
-		Self { row: 1, col: 0 }
+		Self { row: 1, col: 1 }
 	}
 }
 
