@@ -79,7 +79,6 @@ impl Location {
 		self.row += 1;
 		self.col = 1;
 	}
-
 }
 
 impl Default for Location {
