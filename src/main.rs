@@ -80,8 +80,11 @@ impl Location {
 		self.col = 0;
 	}
 
-	pub fn default() -> Self {
-		Self { row: 0, col: 0 }
+}
+
+impl Default for Location {
+	fn default() -> Self {
+		Self { row: 1, col: 0 }
 	}
 }
 
