@@ -80,7 +80,7 @@ impl<'a, I: Iterator<Item = char>> Parser<'a, I> {
 		}
 	}
 
-	pub fn peek(&self) -> Option<&char> {
+	pub fn peek(&mut self) -> Option<&char> {
 		self.s.peek()
 	}
 }
@@ -130,7 +130,7 @@ fn parse_comment(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Phrase, P
 fn parse_number(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
 	let mut contains_point = false;
 
-	let number = peek_while(s, |&c: &char| {
+	let number = peek_while(s.s, |&c: &char| {
 		if !contains_point && c == '.' {
 			contains_point = true;
 			return true;
@@ -144,7 +144,7 @@ fn parse_number(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Phrase, Pa
 }
 
 fn parse_identifier(s: &mut Parser<impl Iterator<Item = char>>) -> Result<Phrase, ParseError> {
-	let identifier = peek_while(s, |&c| c.is_ascii_alphanumeric() || c == '_').collect();
+	let identifier = peek_while(s.s, |&c| c.is_ascii_alphanumeric() || c == '_').collect();
 
 	Ok(Phrase::Identifier(identifier))
 }
