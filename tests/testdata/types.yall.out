@@ -1,0 +1,42 @@
+[
+    Expression {
+        kind: Item,
+        values: [
+            Identifier(
+                "func",
+            ),
+            Identifier(
+                "add",
+            ),
+            Expression(
+                Expression {
+                    kind: Item,
+                    values: [
+                        Identifier(
+                            "a",
+                        ),
+                        Identifier(
+                            "b",
+                        ),
+                    ],
+                },
+            ),
+            Expression(
+                Expression {
+                    kind: Item,
+                    values: [
+                        Identifier(
+                            "add",
+                        ),
+                        Identifier(
+                            "a",
+                        ),
+                        Identifier(
+                            "b",
+                        ),
+                    ],
+                },
+            ),
+        ],
+    },
+]

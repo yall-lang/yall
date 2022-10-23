@@ -1,95 +1,119 @@
 use std::process::Command;
 
-mod setup;
+mod testing;
+use testing::EXE;
 
-const EXE: &str = "./build/release/yall";
+#[test]
+fn parse_bad() {
+	testing::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/bad.yall"])
+		.output()
+		.unwrap();
+
+	assert!(!result.status.success());
+	// We might want to test the exact output eventually, but it's probably gonna change a
+	// lot in the near future, which makes this test very fragile
+	// snapshot!("./tests/testdata/bad.yall.err", result, stderr);
+}
 
 #[test]
 fn parse_basic() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/basic.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/basic.yall.output")
-	);
+	snapshot!("./tests/testdata/basic.yall.out", result, stdout);
 }
 
 #[test]
 fn parse_basic_w_comments() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/basic_w_comments.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/basic_w_comments.yall.output")
-	);
+	snapshot!("./tests/testdata/basic_w_comments.yall.out", result, stdout);
 }
 
 #[test]
 fn parse_comment() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/comment.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/comment.yall.output")
+	snapshot!("./tests/testdata/comment.yall.out", result, stdout);
+}
+
+#[test]
+fn parse_empty_expressions() {
+	testing::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/empty_expressions.yall"])
+		.output()
+		.unwrap();
+
+	snapshot!(
+		"./tests/testdata/empty_expressions.yall.out",
+		result,
+		stdout
 	);
 }
 
 #[test]
 fn parse_empty() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/empty.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/empty.yall.output")
-	);
+	snapshot!("./tests/testdata/empty.yall.out", result, stdout);
 }
 
 #[test]
 fn parse_single_block() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/single_block.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/single_block.yall.output")
-	);
+	snapshot!("./tests/testdata/single_block.yall.out", result, stdout);
+}
+
+#[test]
+fn parse_types() {
+	testing::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/types.yall"])
+		.output()
+		.unwrap();
+
+	snapshot!("./tests/testdata/types.yall.out", result, stdout);
 }
 
 #[test]
 fn parse_whitespace() {
-	setup::before();
+	testing::before();
 
 	let result = Command::new(EXE)
 		.args(["-p", "./tests/testdata/whitespace.yall"])
 		.output()
 		.unwrap();
 
-	assert_eq!(
-		&result.stdout,
-		include_bytes!("./testdata/whitespace.yall.output")
-	);
+	snapshot!("./tests/testdata/whitespace.yall.out", result, stdout);
 }

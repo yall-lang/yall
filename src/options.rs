@@ -7,7 +7,7 @@ struct OptionsBuilder {
 	input: Option<PathBuf>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Options {
 	pub debug_parser: bool,
 	pub input: PathBuf,
@@ -55,5 +55,29 @@ where
 		}
 
 		options.into()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn from_args() {
+		assert_eq!(
+			Options::from_iter(["./howdy.yall"]),
+			Options {
+				debug_parser: false,
+				input: PathBuf::from("./howdy.yall"),
+			}
+		);
+
+		assert_eq!(
+			Options::from_iter(["./main.yall", "-p"]),
+			Options {
+				debug_parser: true,
+				input: PathBuf::from("./main.yall"),
+			}
+		);
 	}
 }

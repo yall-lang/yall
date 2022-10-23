@@ -1,0 +1,58 @@
+[
+    Expression {
+        kind: Item,
+        values: [
+            Identifier(
+                "+",
+            ),
+            Number(
+                "1",
+            ),
+            Number(
+                "2",
+            ),
+        ],
+    },
+    Expression {
+        kind: Item,
+        values: [
+            Identifier(
+                "|>",
+            ),
+            Identifier(
+                "a",
+            ),
+            Identifier(
+                "b",
+            ),
+        ],
+    },
+    Expression {
+        kind: Item,
+        values: [
+            Identifier(
+                "<+>",
+            ),
+            Identifier(
+                "a",
+            ),
+            Identifier(
+                "b",
+            ),
+            Identifier(
+                "c",
+            ),
+        ],
+    },
+    Expression {
+        kind: List,
+        values: [
+            Identifier(
+                "++",
+            ),
+            Identifier(
+                "a",
+            ),
+        ],
+    },
+]
