@@ -77,7 +77,7 @@ impl Location {
 
 	pub fn next_row(&mut self) {
 		self.row += 1;
-		self.col = 0;
+		self.col = 1;
 	}
 
 }
