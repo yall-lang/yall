@@ -65,30 +65,55 @@ enum Phrase {
 	Comment(String),
 }
 
+struct Location {
+	row: isize,
+	col: isize,
+}
+
+impl Location {
+	pub fn next_col(&mut self) {
+		self.col += 1;
+	}
+
+	pub fn next_row(&mut self) {
+		self.row += 1;
+		self.col = 0;
+	}
+
+	pub fn default() -> Self {
+		Self { row: 0, col: 0 }
+	}
+}
+
 struct Parser<'a, I>
 where
 	I: Iterator<Item = char>,
 {
 	s: &'a mut Peekable<I>,
-	row: u32,
-	col: u32,
+	loc: Location,
 }
 
 impl<'a, I: Iterator<Item = char>> Iterator for Parser<'a, I> {
 	type Item = char;
 
 	fn next(&mut self) -> Option<Self::Item> {
-		self.col += 1;
-		self.s.next()
+		let next = self.s.next();
+
+		if let Some('\n') = next {
+			self.loc.next_row();
+		} else {
+			self.loc.next_col();
+		}
+
+		next
 	}
 }
 
 impl<'a, I: Iterator<Item = char>> Parser<'a, I> {
 	pub fn new(stream: &'a mut Peekable<I>) -> Self {
 		Self {
-			row: 0,
-			col: 0,
 			s: stream,
+			loc: Location::default(),
 		}
 	}
 
