@@ -65,7 +65,66 @@ enum Phrase {
 	Comment(String),
 }
 
-fn parse_whitespace(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<()> {
+struct Location {
+	row: isize,
+	col: isize,
+}
+
+impl Location {
+	pub fn next_col(&mut self) {
+		self.col += 1;
+	}
+
+	pub fn next_row(&mut self) {
+		self.row += 1;
+		self.col = 1;
+	}
+}
+
+impl Default for Location {
+	fn default() -> Self {
+		Self { row: 1, col: 1 }
+	}
+}
+
+struct Parser<'a, I>
+where
+	I: Iterator<Item = char>,
+{
+	s: &'a mut Peekable<I>,
+	loc: Location,
+}
+
+impl<'a, I: Iterator<Item = char>> Iterator for Parser<'a, I> {
+	type Item = char;
+
+	fn next(&mut self) -> Option<Self::Item> {
+		let next = self.s.next();
+
+		if let Some('\n') = next {
+			self.loc.next_row();
+		} else {
+			self.loc.next_col();
+		}
+
+		next
+	}
+}
+
+impl<'a, I: Iterator<Item = char>> Parser<'a, I> {
+	pub fn new(stream: &'a mut Peekable<I>) -> Self {
+		Self {
+			s: stream,
+			loc: Location::default(),
+		}
+	}
+
+	pub fn peek(&mut self) -> Option<&char> {
+		self.s.peek()
+	}
+}
+
+fn parse_whitespace(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<()> {
 	while let Some(c) = s.peek() {
 		if !c.is_whitespace() {
 			break;
@@ -76,7 +135,7 @@ fn parse_whitespace(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Res
 	Ok(())
 }
 
-fn parse_string(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+fn parse_string(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	// Consume "
 	let quote = s.next();
 	if quote != Some('"') {
@@ -111,14 +170,14 @@ mod parse_string_tests {
 	#[test]
 	fn invalid() {
 		let invalid = "invalid";
-		assert!(parse_string(&mut invalid.chars().peekable()).is_err());
+		assert!(parse_string(&mut Parser::new(&mut invalid.chars().peekable())).is_err());
 	}
 
 	#[test]
 	fn valid() {
 		let hello = "\"hello!\"";
 		assert_eq!(
-			parse_string(&mut hello.chars().peekable()).unwrap(),
+			parse_string(&mut Parser::new(&mut hello.chars().peekable())).unwrap(),
 			Phrase::Text("hello!".to_string())
 		);
 	}
@@ -127,7 +186,7 @@ mod parse_string_tests {
 	fn escape_quote() {
 		let hello = r#""hello \"buddy\"!""#;
 		assert_eq!(
-			parse_string(&mut hello.chars().peekable()).unwrap(),
+			parse_string(&mut Parser::new(&mut hello.chars().peekable())).unwrap(),
 			Phrase::Text("hello \\\"buddy\\\"!".to_string())
 		);
 	}
@@ -137,14 +196,14 @@ mod parse_string_tests {
 		let hello = "\"hello!\"🏁";
 		let mut s = hello.chars().peekable();
 		assert_eq!(
-			parse_string(&mut s).unwrap(),
+			parse_string(&mut Parser::new(&mut s)).unwrap(),
 			Phrase::Text("hello!".to_string())
 		);
 		assert_eq!(s.next(), Some('🏁'));
 	}
 }
 
-fn parse_comment(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+fn parse_comment(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	// Consume ;
 	let start = s.next();
 	if start != Some(';') {
@@ -163,7 +222,7 @@ mod parse_comment_tests {
 	fn no_new_line() {
 		let hello = "; hello!";
 		assert_eq!(
-			parse_comment(&mut hello.chars().peekable()).unwrap(),
+			parse_comment(&mut Parser::new(&mut hello.chars().peekable())).unwrap(),
 			Phrase::Comment(" hello!".to_string())
 		);
 	}
@@ -171,7 +230,8 @@ mod parse_comment_tests {
 	#[test]
 	fn stops() {
 		let hello = "; hello!\n🏁";
-		let mut s = hello.chars().peekable();
+		let mut peekable = hello.chars().peekable();
+		let mut s = Parser::new(&mut peekable);
 		assert_eq!(
 			parse_comment(&mut s).unwrap(),
 			Phrase::Comment(" hello!".to_string())
@@ -180,10 +240,10 @@ mod parse_comment_tests {
 	}
 }
 
-fn parse_number(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+fn parse_number(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	let mut contains_point = false;
 
-	let number = peek_while(s, |&c| {
+	let number = peek_while(s.s, |&c: &char| {
 		if !contains_point && c == '.' {
 			contains_point = true;
 			return true;
@@ -196,8 +256,8 @@ fn parse_number(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<
 	Ok(Phrase::Number(number))
 }
 
-fn parse_text_identifier(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
-	let identifier = peek_while(s, |&c| c.is_ascii_alphanumeric() || c == '_').collect();
+fn parse_text_identifier(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+	let identifier = peek_while(s.s, |&c| c.is_ascii_alphanumeric() || c == '_').collect();
 
 	Ok(Phrase::Identifier(identifier))
 }
@@ -205,15 +265,13 @@ fn parse_text_identifier(s: &mut Peekable<impl Iterator<Item = char>>) -> miette
 static OPERATOR_CHARACTERS: [char; 13] = [
 	'*', '+', '-', '/', '<', '>', '=', '!', '$', '|', '?', '^', '~',
 ];
-fn parse_operator_identifier(
-	s: &mut Peekable<impl Iterator<Item = char>>,
-) -> miette::Result<Phrase> {
-	let identifier = peek_while(s, |c| OPERATOR_CHARACTERS.contains(c)).collect();
+fn parse_operator_identifier(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+	let identifier = peek_while(s.s, |c| OPERATOR_CHARACTERS.contains(c)).collect();
 
 	Ok(Phrase::Identifier(identifier))
 }
 
-fn parse_type(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<()> {
+fn parse_type(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<()> {
 	let prefix = s.take(2).collect::<String>();
 	if prefix != "::" {
 		return Err(miette!("entered parse_type with no type to parse"));
@@ -228,7 +286,7 @@ fn parse_type(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<()
 	Ok(())
 }
 
-fn parse_phrase(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+fn parse_phrase(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	parse_whitespace(s)?;
 
 	let phrase = match s.peek().ok_or(miette!("unexpected end of file"))? {
@@ -248,7 +306,7 @@ fn parse_phrase(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<
 	phrase
 }
 
-fn parse_expression(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Expression> {
+fn parse_expression(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Expression> {
 	parse_whitespace(s)?;
 
 	if s.peek() == Some(&';') {
@@ -275,8 +333,8 @@ fn parse_expression(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Res
 	Ok(Expression { kind, values })
 }
 
-fn parse_program(s: &mut Peekable<impl Iterator<Item = char>>) -> miette::Result<Vec<Expression>> {
-	let mut program = vec![];
+fn parse_program(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Vec<Expression>> {
+	let mut program = Vec::new();
 	parse_whitespace(s)?;
 
 	while s.peek().is_some() {
@@ -293,7 +351,9 @@ fn main() -> miette::Result<()> {
 	let source = fs::read_to_string(options.input).or(Err(miette!("failed to read input file")))?;
 	let mut stream = source.chars().peekable();
 
-	let program = parse_program(&mut stream)?;
+	let mut parser = Parser::new(&mut stream);
+	let program = parse_program(&mut parser).unwrap();
+
 	if options.debug_parser {
 		println!("{:#?}", program);
 	}
