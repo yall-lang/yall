@@ -13,27 +13,27 @@ pub enum Phrase {
 	Comment(String),
 }
 
-pub fn parse_whitespace(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<()> {
-	while let Some(c) = s.peek() {
+pub fn parse_whitespace(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<()> {
+	while let Some(c) = parser.peek() {
 		if !c.is_whitespace() {
 			break;
 		}
-		s.next();
+		parser.next();
 	}
 
 	Ok(())
 }
 
-pub fn parse_string(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+pub fn parse_string(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	// Consume "
-	let quote = s.next();
+	let quote = parser.next();
 	if quote != Some('"') {
 		return Err(miette!("entered parse_string with no string to parse"));
 	}
 
 	let mut is_next_escaped = false;
 
-	let text = s
+	let text = parser
 		.take_while(|&c| {
 			if is_next_escaped {
 				is_next_escaped = false;
@@ -92,14 +92,14 @@ mod parse_string_tests {
 	}
 }
 
-pub fn parse_comment(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+pub fn parse_comment(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	// Consume ;
-	let start = s.next();
+	let start = parser.next();
 	if start != Some(';') {
 		return Err(miette!("entered parse_comment with no comment to parse"));
 	}
 
-	let body = s.take_while(|&c| c != '\n').collect();
+	let body = parser.take_while(|&c| c != '\n').collect();
 	Ok(Phrase::Comment(body))
 }
 
@@ -128,10 +128,10 @@ mod parse_comment_tests {
 	}
 }
 
-pub fn parse_number(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+pub fn parse_number(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	let mut contains_point = false;
 
-	let number = s
+	let number = parser
 		.peek_while(|&c: &char| {
 			if !contains_point && c == '.' {
 				contains_point = true;
@@ -145,8 +145,10 @@ pub fn parse_number(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Resul
 	Ok(Phrase::Number(number))
 }
 
-pub fn parse_text_identifier(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
-	let identifier = s
+pub fn parse_text_identifier(
+	parser: &mut Parser<impl Iterator<Item = char>>,
+) -> miette::Result<Phrase> {
+	let identifier = parser
 		.peek_while(|&c| c.is_ascii_alphanumeric() || c == '_')
 		.collect();
 
@@ -157,15 +159,17 @@ static OPERATOR_CHARACTERS: [char; 13] = [
 	'*', '+', '-', '/', '<', '>', '=', '!', '$', '|', '?', '^', '~',
 ];
 pub fn parse_operator_identifier(
-	s: &mut Parser<impl Iterator<Item = char>>,
+	parser: &mut Parser<impl Iterator<Item = char>>,
 ) -> miette::Result<Phrase> {
-	let identifier = s.peek_while(|c| OPERATOR_CHARACTERS.contains(c)).collect();
+	let identifier = parser
+		.peek_while(|c| OPERATOR_CHARACTERS.contains(c))
+		.collect();
 
 	Ok(Phrase::Identifier(identifier))
 }
 
-pub fn parse_type(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<()> {
-	let prefix = s.take(2).collect::<String>();
+pub fn parse_type(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<()> {
+	let prefix = parser.take(2).collect::<String>();
 	if prefix != "::" {
 		return Err(miette!("entered parse_type with no type to parse"));
 	}
@@ -174,26 +178,26 @@ pub fn parse_type(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<
 	// would allow weird things like `a::b::c` since `parse_phrase` calls us. We need some
 	// mechanism to prevent annotating types with types. I guess that could be done as a
 	// separate validation step, but I feel like it shouldn't make it past the parser.
-	parse_text_identifier(s)?;
+	parse_text_identifier(parser)?;
 
 	Ok(())
 }
 
-pub fn parse_phrase(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
-	parse_whitespace(s)?;
+pub fn parse_phrase(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+	parse_whitespace(parser)?;
 
-	let phrase = match s.peek().ok_or(miette!("unexpected end of file"))? {
-		'(' | '[' | '{' => parse_expression(s).map(Phrase::Expression),
-		'"' => parse_string(s),
-		';' => parse_comment(s),
-		x if x.is_ascii_digit() => parse_number(s),
-		x if x.is_ascii_alphabetic() => parse_text_identifier(s),
-		x if OPERATOR_CHARACTERS.contains(x) => parse_operator_identifier(s),
+	let phrase = match parser.peek().ok_or(miette!("unexpected end of file"))? {
+		'(' | '[' | '{' => parse_expression(parser).map(Phrase::Expression),
+		'"' => parse_string(parser),
+		';' => parse_comment(parser),
+		x if x.is_ascii_digit() => parse_number(parser),
+		x if x.is_ascii_alphabetic() => parse_text_identifier(parser),
+		x if OPERATOR_CHARACTERS.contains(x) => parse_operator_identifier(parser),
 		_ => Err(miette!("unexpected character")),
 	};
 
-	if s.peek() == Some(&':') {
-		parse_type(s)?;
+	if parser.peek() == Some(&':') {
+		parse_type(parser)?;
 	};
 
 	phrase

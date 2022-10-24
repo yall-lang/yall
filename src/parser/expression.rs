@@ -50,22 +50,27 @@ impl ExpressionKind {
 	}
 }
 
-pub fn parse_expression(s: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Expression> {
-	parse_whitespace(s)?;
+pub fn parse_expression(
+	parser: &mut Parser<impl Iterator<Item = char>>,
+) -> miette::Result<Expression> {
+	parse_whitespace(parser)?;
 
-	if s.peek() == Some(&';') {
-		return Ok(Expression::null(parse_comment(s)?));
+	if parser.peek() == Some(&';') {
+		return Ok(Expression::null(parse_comment(parser)?));
 	}
 
-	let kind =
-		ExpressionKind::from_initiator(s.next().ok_or(miette!("expected an expression here"))?)?;
+	let kind = ExpressionKind::from_initiator(
+		parser
+			.next()
+			.ok_or(miette!("expected an expression here"))?,
+	)?;
 
 	let mut values = vec![];
-	while let Ok(phrase) = parse_phrase(s) {
+	while let Ok(phrase) = parse_phrase(parser) {
 		values.push(phrase);
 	}
 
-	let terminator = s.next();
+	let terminator = parser.next();
 	if terminator != Some(kind.terminator()) {
 		return Err(miette!(
 			"expected {} to terminate expression, got {:?}",

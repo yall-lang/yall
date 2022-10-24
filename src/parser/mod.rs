@@ -15,7 +15,7 @@ pub struct Parser<I>
 where
 	I: Iterator<Item = char>,
 {
-	s: Peekable<I>,
+	source: Peekable<I>,
 	location: Location,
 }
 
@@ -26,7 +26,7 @@ where
 	type Item = char;
 
 	fn next(&mut self) -> Option<Self::Item> {
-		let next = self.s.next();
+		let next = self.source.next();
 
 		if let Some('\n') = next {
 			self.location.next_line();
@@ -43,7 +43,7 @@ where
 impl<'a> From<&'a str> for Parser<Chars<'a>> {
 	fn from(s: &'a str) -> Self {
 		Self {
-			s: s.chars().peekable(),
+			source: s.chars().peekable(),
 			location: Default::default(),
 		}
 	}
@@ -51,7 +51,7 @@ impl<'a> From<&'a str> for Parser<Chars<'a>> {
 impl<'a> From<&'a String> for Parser<Chars<'a>> {
 	fn from(s: &'a String) -> Self {
 		Self {
-			s: s.chars().peekable(),
+			source: s.chars().peekable(),
 			location: Default::default(),
 		}
 	}
@@ -59,14 +59,14 @@ impl<'a> From<&'a String> for Parser<Chars<'a>> {
 
 impl<I: Iterator<Item = char>> Parser<I> {
 	pub fn peek(&mut self) -> Option<&char> {
-		self.s.peek()
+		self.source.peek()
 	}
 
 	pub fn peek_while<P>(&mut self, pred: P) -> PeekWhile<I, P>
 	where
 		P: FnMut(&char) -> bool,
 	{
-		peek_while(&mut self.s, pred)
+		peek_while(&mut self.source, pred)
 	}
 }
 
