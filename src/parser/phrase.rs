@@ -11,6 +11,7 @@ pub enum Phrase {
 	Text(String),
 	Number(String),
 	Comment(String),
+	Label(String),
 }
 
 pub fn parse_whitespace(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<()> {
@@ -183,6 +184,18 @@ pub fn parse_type(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Re
 	Ok(())
 }
 
+pub fn parse_label(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
+	let prefix = parser.next().ok_or(miette!("nothing left to parse"))?;
+
+	if prefix != ':' {
+		return Err(miette!("entered parse_label on a non-label"));
+	}
+
+	let label: String = parser.peek_while(|c| c.is_alphanumeric()).collect();
+
+	Ok(Phrase::Label(label))
+}
+
 pub fn parse_phrase(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::Result<Phrase> {
 	parse_whitespace(parser)?;
 
@@ -190,6 +203,7 @@ pub fn parse_phrase(parser: &mut Parser<impl Iterator<Item = char>>) -> miette::
 		'(' | '[' | '{' => parse_expression(parser).map(Phrase::Expression),
 		'"' => parse_string(parser),
 		';' => parse_comment(parser),
+		':' => parse_label(parser),
 		x if x.is_ascii_digit() => parse_number(parser),
 		x if x.is_ascii_alphabetic() => parse_text_identifier(parser),
 		x if OPERATOR_CHARACTERS.contains(x) => parse_operator_identifier(parser),
