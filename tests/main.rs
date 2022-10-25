@@ -117,3 +117,15 @@ fn parse_whitespace() {
 
 	snapshot!("./tests/testdata/whitespace.yall.out", result, stdout);
 }
+
+#[test]
+fn parse_label() {
+	testing::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/label.yall"])
+		.output()
+		.unwrap();
+
+	snapshot!("./tests/testdata/label.yall.out", result, stdout);
+}

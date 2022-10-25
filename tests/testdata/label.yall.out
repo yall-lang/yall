@@ -1,0 +1,13 @@
+[
+    Expression {
+        kind: Item,
+        values: [
+            Label(
+                "label",
+            ),
+            Identifier(
+                "foo",
+            ),
+        ],
+    },
+]
