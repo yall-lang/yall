@@ -13,9 +13,7 @@ fn parse_bad() {
 		.unwrap();
 
 	assert!(!result.status.success());
-	// We might want to test the exact output eventually, but it's probably gonna change a
-	// lot in the near future, which makes this test very fragile
-	// snapshot!("./tests/testdata/bad.yall.err", result, stderr);
+	snapshot!("./tests/testdata/bad.yall.err", result, stderr);
 }
 
 #[test]
@@ -83,6 +81,30 @@ fn parse_empty() {
 }
 
 #[test]
+fn parse_field_accessor() {
+	testing::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/field_accessor.yall"])
+		.output()
+		.unwrap();
+
+	snapshot!("./tests/testdata/field_accessor.yall.out", result, stdout);
+}
+
+#[test]
+fn parse_label() {
+	testing::before();
+
+	let result = Command::new(EXE)
+		.args(["-p", "./tests/testdata/label.yall"])
+		.output()
+		.unwrap();
+
+	snapshot!("./tests/testdata/label.yall.out", result, stdout);
+}
+
+#[test]
 fn parse_single_block() {
 	testing::before();
 
@@ -116,16 +138,4 @@ fn parse_whitespace() {
 		.unwrap();
 
 	snapshot!("./tests/testdata/whitespace.yall.out", result, stdout);
-}
-
-#[test]
-fn parse_label() {
-	testing::before();
-
-	let result = Command::new(EXE)
-		.args(["-p", "./tests/testdata/label.yall"])
-		.output()
-		.unwrap();
-
-	snapshot!("./tests/testdata/label.yall.out", result, stdout);
 }

@@ -14,7 +14,7 @@ fn main() -> miette::Result<()> {
 	let options = env::args().skip(1).collect::<Options>();
 
 	let source = fs::read_to_string(options.input).or(Err(miette!("failed to read input file")))?;
-	let program = parser::parse_program(&mut (&source).into()).unwrap();
+	let program = parser::parse_program(&mut (&source).into())?;
 
 	if options.debug_parser {
 		println!("{:#?}", program);

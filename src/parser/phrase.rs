@@ -150,7 +150,7 @@ pub fn parse_text_identifier(
 	parser: &mut Parser<impl Iterator<Item = char>>,
 ) -> miette::Result<Phrase> {
 	let identifier = parser
-		.peek_while(|&c| c.is_ascii_alphanumeric() || c == '_')
+		.peek_while(|&c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
 		.collect();
 
 	Ok(Phrase::Identifier(identifier))

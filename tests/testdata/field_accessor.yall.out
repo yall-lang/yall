@@ -1,0 +1,76 @@
+[
+    Expression {
+        kind: Item,
+        values: [
+            Identifier(
+                "struct",
+            ),
+            Identifier(
+                "Friend",
+            ),
+            Expression(
+                Expression {
+                    kind: List,
+                    values: [
+                        Identifier(
+                            "name",
+                        ),
+                        Identifier(
+                            "birthday",
+                        ),
+                        Identifier(
+                            "coolness",
+                        ),
+                    ],
+                },
+            ),
+        ],
+    },
+    Expression {
+        kind: Item,
+        values: [
+            Identifier(
+                "func",
+            ),
+            Identifier(
+                "describe-friend",
+            ),
+            Expression(
+                Expression {
+                    kind: Item,
+                    values: [
+                        Identifier(
+                            "friend",
+                        ),
+                    ],
+                },
+            ),
+            Expression(
+                Expression {
+                    kind: Item,
+                    values: [
+                        Identifier(
+                            "println",
+                        ),
+                        Text(
+                            "I have a friend named ",
+                        ),
+                        Expression(
+                            Expression {
+                                kind: Item,
+                                values: [
+                                    Identifier(
+                                        "Friend.name",
+                                    ),
+                                    Identifier(
+                                        "friend",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ],
+                },
+            ),
+        ],
+    },
+]

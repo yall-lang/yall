@@ -1,0 +1,7 @@
+(struct Friend [
+	name::String
+	birthday::Date
+	coolness::number ])
+
+(func describe-friend (friend::Friend)
+	(println "I have a friend named " (Friend.name friend)))
